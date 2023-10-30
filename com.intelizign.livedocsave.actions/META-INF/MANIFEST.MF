@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Actions
+Bundle-SymbolicName: com.intelizign.livedocsave.actions
+Bundle-Version: 1.2.0
+Bundle-Vendor: INTELIZIGN
+Automatic-Module-Name: com.intelizign.livedocsave.actions
+Bundle-RequiredExecutionEnvironment: JavaSE-17
+Require-Bundle: com.polarion.alm.ui;bundle-version="3.21.2",
+ com.polarion.platform;bundle-version="3.21.2",
+ com.polarion.alm.tracker;bundle-version="3.21.2",
+ org.apache.hivemind;bundle-version="1.1.1"
