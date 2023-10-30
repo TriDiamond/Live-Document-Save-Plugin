@@ -18,6 +18,9 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import com.polarion.alm.tracker.ITrackerService;
 import com.polarion.alm.tracker.model.IModule;
+import com.polarion.alm.tracker.model.ITrackerProject;
+import com.polarion.alm.tracker.model.IWorkItem;
+import com.polarion.alm.ws.client.types.tracker.EnumOption;
 import com.polarion.core.util.exceptions.UserFriendlyRuntimeException;
 import com.polarion.core.util.logging.Logger;
 import com.polarion.platform.core.PlatformContext;
@@ -133,6 +136,15 @@ public class LiveDocSaveHandler implements InvocationHandler {
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		if (method.getName().equals("save")  && (args.length == 1) && (args[0] instanceof IModule)) {
+			
+			log.info("-------------Modification Page ---------\n");
+			ITrackerService trackerService = PlatformContext.getPlatform().lookupService(ITrackerService.class);
+			ITrackerProject getTrackerProject = trackerService.getTrackerProject("PistonAssembly");
+			IWorkItem workItem = getTrackerProject.getWorkItem("PA-512");
+			EnumOption wiCustomField = (EnumOption)workItem.getCustomField("importance");
+			log.info("Get Enumeration Id " + wiCustomField.getEnumId() + "Get Enumeration value" + wiCustomField.getName()+"\n");
+			log.info("-------------Modification Page End ---------\n");
+			
 			return saveModule((IModule) args[0]);
 		}
 		return invokeDelegate(ds, method, args);
