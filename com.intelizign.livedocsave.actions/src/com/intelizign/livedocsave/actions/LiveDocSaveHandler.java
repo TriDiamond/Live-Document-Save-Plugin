@@ -17,6 +17,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import com.polarion.alm.tracker.ITrackerService;
+import com.polarion.alm.tracker.internal.model.StatusOpt;
 import com.polarion.alm.tracker.model.IModule;
 import com.polarion.alm.tracker.model.ITrackerProject;
 import com.polarion.alm.tracker.model.IWorkItem;
@@ -137,13 +138,22 @@ public class LiveDocSaveHandler implements InvocationHandler {
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		if (method.getName().equals("save")  && (args.length == 1) && (args[0] instanceof IModule)) {
 			
-			log.info("-------------Modification Page ---------\n");
+			System.out.println("-------------Get CustomField Code ---------\n");
 			ITrackerService trackerService = PlatformContext.getPlatform().lookupService(ITrackerService.class);
 			ITrackerProject getTrackerProject = trackerService.getTrackerProject("PistonAssembly");
 			IWorkItem workItem = getTrackerProject.getWorkItem("PA-512");
-			EnumOption wiCustomField = (EnumOption)workItem.getCustomField("importance");
-			log.info("Get Enumeration Id " + wiCustomField.getEnumId() + "Get Enumeration value" + wiCustomField.getName()+"\n");
-			log.info("-------------Modification Page End ---------\n");
+			Object wiCustomField = workItem.getCustomField("importance");
+			Class<? extends Object> objClass = wiCustomField.getClass();
+			System.out.println("--The class Name is -- " + objClass.getName());
+			if(wiCustomField instanceof StatusOpt) {
+				StatusOpt enumStatus = (StatusOpt) wiCustomField;
+				System.out.println("---wiCusomfield Instance of EnumOption---"+enumStatus.getId());
+			}else{
+				System.out.println("---wiCusomfield Instance of Notan  EnumOption---");
+			}
+			System.out.println("CustomField" + wiCustomField);
+			//log.info("Get Enumeration Id " + wiCustomField.getEnumId() + "Get Enumeration value" + wiCustomField.getName()+"\n");
+			System.out.println("-------------Get Custom Field Code End ---------\n");
 			
 			return saveModule((IModule) args[0]);
 		}
