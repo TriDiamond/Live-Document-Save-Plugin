@@ -143,16 +143,16 @@ public class LiveDocSaveHandler implements InvocationHandler {
 			ITrackerProject getTrackerProject = trackerService.getTrackerProject("PistonAssembly");
 			IWorkItem workItem = getTrackerProject.getWorkItem("PA-512");
 			Object wiCustomField = workItem.getCustomField("importance");
+			
 			Class<? extends Object> objClass = wiCustomField.getClass();
 			System.out.println("--The class Name is -- " + objClass.getName());
-			if(wiCustomField instanceof StatusOpt) {
+			
+			if (wiCustomField instanceof StatusOpt) {
 				StatusOpt enumStatus = (StatusOpt) wiCustomField;
-				System.out.println("---wiCusomfield Instance of EnumOption---"+enumStatus.getId());
-			}else{
+				System.out.println("---wiCusomfield Instance of EnumOption---" + enumStatus.getId());
+			} else {
 				System.out.println("---wiCusomfield Instance of Notan  EnumOption---");
 			}
-			System.out.println("CustomField" + wiCustomField);
-			//log.info("Get Enumeration Id " + wiCustomField.getEnumId() + "Get Enumeration value" + wiCustomField.getName()+"\n");
 			System.out.println("-------------Get Custom Field Code End ---------\n");
 			
 			return saveModule((IModule) args[0]);
