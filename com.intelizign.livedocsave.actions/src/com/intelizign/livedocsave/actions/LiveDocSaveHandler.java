@@ -16,21 +16,27 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+
+import com.polarion.alm.projects.model.IProject;
+import com.polarion.alm.tracker.IModuleManager;
 import com.polarion.alm.tracker.ITrackerService;
-import com.polarion.alm.tracker.internal.model.StatusOpt;
 import com.polarion.alm.tracker.model.IModule;
 import com.polarion.alm.tracker.model.ITrackerProject;
 import com.polarion.alm.tracker.model.IWorkItem;
-import com.polarion.alm.ws.client.types.tracker.EnumOption;
 import com.polarion.core.util.exceptions.UserFriendlyRuntimeException;
 import com.polarion.core.util.logging.Logger;
 import com.polarion.platform.core.PlatformContext;
 import com.polarion.platform.persistence.IDataService;
+import com.polarion.platform.persistence.model.IPObjectList;
+import com.polarion.platform.persistence.spi.EnumOption;
+import com.polarion.subterra.base.location.ILocation;
+import com.polarion.subterra.base.location.Location;
 
 public class LiveDocSaveHandler implements InvocationHandler {
 	private static final Logger log = Logger.getLogger(LiveDocSaveHandler.class);
 	private IDataService ds;
 	private ArrayList<Thread> currentActiveThreads = new ArrayList<Thread>();
+	private ITrackerService trackerService = PlatformContext.getPlatform().lookupService(ITrackerService.class);
 	private static final String javascriptSuffix = ".js";
 	private String preSave = "pre-save";
 	private String postSave = "post-save";
@@ -79,34 +85,32 @@ public class LiveDocSaveHandler implements InvocationHandler {
 			throws IOException, ScriptException, HookScriptStopReturnValue {
 		ScriptEngineManager manager = new ScriptEngineManager();
 		ScriptEngine scriptEngineObject = manager.getEngineByName("javascript");
-		ITrackerService trackerService = PlatformContext.getPlatform().lookupService(ITrackerService.class);
 		Bindings bindings = scriptEngineObject.getBindings(ScriptContext.ENGINE_SCOPE);
 		bindings.put("trackerService", trackerService);
 		bindings.put("polarionLog", log);
 		bindings.put("module", module);
 		for (File file : scriptFilePathList) {
-		        String scriptContent = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
-		        Object returnEvaluatingScriptObject = scriptEngineObject.eval(scriptContent);
-		        if (returnEvaluatingScriptObject != null && !returnEvaluatingScriptObject.toString().isEmpty()) {
-		            throw new HookScriptStopReturnValue(returnEvaluatingScriptObject.toString());
-		        } 
+			String scriptContent = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+			Object returnEvaluatingScriptObject = scriptEngineObject.eval(scriptContent);
+			if (returnEvaluatingScriptObject != null && !returnEvaluatingScriptObject.toString().isEmpty()) {
+				throw new HookScriptStopReturnValue(returnEvaluatingScriptObject.toString());
+			}
 		}
 	}
 
 	// Generate Script List to search for pre and post save Hooks
 	public List<String> collectScriptFileName(IModule module) throws ModuleProjectorTypeUndefined {
 		try {
-		moduleTypeId = module.getType().getId();
-		projectId = module.getProject().getId();
-		}catch(Exception e) {
+			moduleTypeId = module.getType().getId();
+			projectId = module.getProject().getId();
+		} catch (Exception e) {
 			throw new ModuleProjectorTypeUndefined();
 		}
 		List<String> scriptFileNameList = Stream
-				.of("",projectId + "-" + moduleTypeId + "-", moduleTypeId + "-", projectId + "-")
+				.of("", projectId + "-" + moduleTypeId + "-", moduleTypeId + "-", projectId + "-")
 				.collect(Collectors.toCollection(ArrayList::new));
 		return scriptFileNameList;
 	}
-
 
 	// Get Existing script File in polarion documentsave Directory
 	private List<File> getExistingScriptFile(List<String> scriptPaths, String suffix) {
@@ -120,6 +124,7 @@ public class LiveDocSaveHandler implements InvocationHandler {
 		}
 		return scriptFilePath;
 	}
+
 	// Get script Folder
 	private static String getScriptFolder() {
 		return System.getProperty("com.polarion.home") + "/../scripts/";
@@ -136,45 +141,66 @@ public class LiveDocSaveHandler implements InvocationHandler {
 	 */
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-		if (method.getName().equals("save")  && (args.length == 1) && (args[0] instanceof IModule)) {
+		
+	
+		if (method.getName().equals("delete") && (args.length == 1) && (args[0] instanceof IWorkItem)) {
+		
+			 deleteModule((IWorkItem) args[0]);
 			
-			System.out.println("-------------Get CustomField Code ---------\n");
-			ITrackerService trackerService = PlatformContext.getPlatform().lookupService(ITrackerService.class);
-			ITrackerProject getTrackerProject = trackerService.getTrackerProject("PistonAssembly");
-			IWorkItem workItem = getTrackerProject.getWorkItem("PA-512");
-			Object wiCustomField = workItem.getCustomField("importance");
-			
-			Class<? extends Object> objClass = wiCustomField.getClass();
-			System.out.println("--The class Name is -- " + objClass.getName());
-			
-			if (wiCustomField instanceof StatusOpt) {
-				StatusOpt enumStatus = (StatusOpt) wiCustomField;
-				System.out.println("---wiCusomfield Instance of EnumOption---" + enumStatus.getId());
-			} else {
-				System.out.println("---wiCusomfield Instance of Notan  EnumOption---");
-			}
-			System.out.println("-------------Get Custom Field Code End ---------\n");
-			
+		}
+		
+		if (method.getName().equals("save") && (args.length == 1) && (args[0] instanceof IModule)) {	
 			return saveModule((IModule) args[0]);
 		}
+		
 		return invokeDelegate(ds, method, args);
 	}
 
 	public void originalDataServiceMethod(IModule module) throws DataServiceSaveError {
 		try {
-		ds.save(module);
-		}catch(Exception e) {
-		throw new DataServiceSaveError(e);
+			ds.save(module);
+		} catch (Exception e) {
+			throw new DataServiceSaveError(e);
+		}
+	}
+	
+	/*
+	 * Displaying Deleted WorkItem In Module
+	 */
+	private void deleteModule(IWorkItem workItem) throws Throwable {
+		System.out.println("WorkItem Id is" + workItem.getId() + 
+				"WorkItem Title is" + workItem.getTitle() + "\n");	
+		
+		getCustomFieldValue(workItem);
+	}
+	
+	/*
+	 * Check CustomField Specification value in all workItem
+	 */
+	public void getCustomFieldValue(IWorkItem workItem) {
+		ITrackerProject trackerPro = trackerService.getTrackerProject(workItem.getProjectId());
+		String documentWorkItem = "project.id:" + workItem.getProjectId() + "AND type:testcase";
+		IPObjectList<IWorkItem> wiList = trackerPro.queryWorkItems(documentWorkItem, "id");
+		for (IWorkItem wi : wiList) {
+			EnumOption customEnum = (EnumOption) wi.getValue("specification");
+			IWorkItem workItemObject = trackerPro.getWorkItem(customEnum.getId());
+			if (workItem.getId().equals(workItemObject.getId())) {
+				String warningMessage = "Deleting" +" "+ workItem.getType().getId() +" "+ "In Current Document is mapped "
+						+ "to Following workItem Specification Field" + " "+wi.getId();
+				throw new UserFriendlyRuntimeException(warningMessage);
+			}
+
 		}
 	}
 
-	// This Method read the custom script and accured error its warning to the user
+	// This Method read the custom script and occurred error its warning to the user
 	private Object saveModule(IModule module) throws Throwable {
 		try {
+			System.out.println("Module Id is" + module.getId());
 			List<String> scriptPathsList = collectScriptFileName(module);
 			log.info("SaveHandler instance " + hashCode() + " is called from thread with id "
 					+ Thread.currentThread().hashCode() + " for Module with id " + module.getId());
-			synchronized (currentActiveThreads) {
+			    synchronized (currentActiveThreads) {
 				currentActiveThreads.contains(Thread.currentThread());
 				currentActiveThreads.add(Thread.currentThread());
 			}
@@ -184,8 +210,7 @@ public class LiveDocSaveHandler implements InvocationHandler {
 
 		} catch (ScriptException e) {
 			log.error("Error in Hook-Script: " + e.toString());
-			String errormessage = "The LiveDocument is not saved because there was an " + 
-			"error in the script: "
+			String errormessage = "The LiveDocument is not saved because there was an " + "error in the script: "
 					+ e.getMessage();
 			throw new UserFriendlyRuntimeException(errormessage);
 
@@ -203,7 +228,7 @@ public class LiveDocSaveHandler implements InvocationHandler {
 					+ "method of the DataService to provide a normal behaviour.\n" + e.toString());
 			e.printStackTrace();
 			ds.save(module);
-			
+
 		} finally {
 			// Remove the current thread From currentactive Thread List
 			synchronized (currentActiveThreads) {
