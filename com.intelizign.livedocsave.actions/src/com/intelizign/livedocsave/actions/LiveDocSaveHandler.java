@@ -36,6 +36,7 @@ public class LiveDocSaveHandler implements InvocationHandler {
 	private static final Logger log = Logger.getLogger(LiveDocSaveHandler.class);
 	private IDataService ds;
 	private ArrayList<Thread> currentActiveThreads = new ArrayList<Thread>();
+	private List<IWorkItem> workItemList = new ArrayList <IWorkItem> ();
 	private ITrackerService trackerService = PlatformContext.getPlatform().lookupService(ITrackerService.class);
 	private static final String javascriptSuffix = ".js";
 	private String preSave = "pre-save";
@@ -181,7 +182,10 @@ public class LiveDocSaveHandler implements InvocationHandler {
 		ITrackerProject trackerPro = trackerService.getTrackerProject(workItem.getProjectId());
 		String documentWorkItem = "project.id:" + workItem.getProjectId() + "AND type:testcase";
 		IPObjectList<IWorkItem> wiList = trackerPro.queryWorkItems(documentWorkItem, "id");
+		List<IWorkItem> workItemList = gatherWorkItemObject(wiList, workItem);
+		
 		for (IWorkItem wi : wiList) {
+			
 			EnumOption customEnum = (EnumOption) wi.getValue("specification");
 			IWorkItem workItemObject = trackerPro.getWorkItem(customEnum.getId());
 			if (workItem.getId().equals(workItemObject.getId())) {
@@ -192,6 +196,20 @@ public class LiveDocSaveHandler implements InvocationHandler {
 
 		}
 	}
+	/*
+	 * Collect the  test case workItemObject  -- if the Specification Field has 
+	 * the deletion of a work item value in the current document.
+	 */
+	public List<IWorkItem> gatherWorkItemObject(IPObjectList<IWorkItem> wiList, IWorkItem workItem) {
+		
+		for(IWorkItem wi : wiList) {
+			if(wi.getId().equalsIgnoreCase(workItem.getId())){
+               workItemList.add(wi);
+			}
+		}
+		return workItemList;
+	}
+	
 
 	// This Method read the custom script and occurred error its warning to the user
 	private Object saveModule(IModule module) throws Throwable {
