@@ -185,27 +185,36 @@ public class LiveDocSaveHandler implements InvocationHandler {
 	public void getSpecificationFieldTestCaseWi(IWorkItem workItem) {
 		
 		
-		String heading = workItem.getId().toString();     // Get Deleted Heading
-		String module = workItem.getModule().getId();     // Get Deleted header Module Id
-		
+		String heading = workItem.getId().toString(); // Get Deleted Heading
+		String module = workItem.getModule().getId(); // Get Deleted header Module Id
+		 
 		System.out.println("The heading and Module Name is" + heading + module);
 		String wiQuery = "";
-		if(module.equalsIgnoreCase("Specification_LOV")) { // If Document is Specification_LOV Below Query Going to Be Executed
-			wiQuery = "select WORKITEM.C_URI from WORKITEM inner join PROJECT on PROJECT.C_URI = WORKITEM.FK_URI_PROJECT  inner join CF_WORKITEM CF1 on CF1.FK_WORKITEM = WORKITEM.C_PK where true and WORKITEM.C_TYPE = 'testcase' AND CF1.C_NAME = 'specification' AND CF1.C_STRING_VALUE='"+ heading+"'";
-		}else if(module.equalsIgnoreCase("Generic_Test_Name")) {
-			wiQuery = "select WORKITEM.C_URI from WORKITEM inner join PROJECT on PROJECT.C_URI = WORKITEM.FK_URI_PROJECT  inner join CF_WORKITEM CF1 on CF1.FK_WORKITEM = WORKITEM.C_PK where true and WORKITEM.C_TYPE = 'testcase' AND CF1.C_NAME = 'genericTestName' AND CF1.C_STRING_VALUE='"+ heading+"'";
-		}else {
-			log.info("Module Not Exist");
+		String fieldName = "";
+		 
+		if (module.equalsIgnoreCase("Specification_LOV")) {
+		    fieldName = "specification";
+		} else if (module.equalsIgnoreCase("Generic_Test_Name")) {
+		    fieldName = "genericTestName";
+		} else {
+		    log.info("Module Not Exist");
 		}
-		
-		IPObjectList<IWorkItem> wiList =trackerService.getDataService().sqlSearch(wiQuery);
-		int count = wiList.size();
-		System.out.println("The WorkItem Count is" + count);
-		for(IWorkItem wi : wiList) {
-			System.out.println("WorkItem Id is" + wi.getId() +"\n");
+		 
+		if (!fieldName.isEmpty()) {
+		    wiQuery = "SELECT WORKITEM.C_URI FROM WORKITEM " +
+		              "INNER JOIN PROJECT ON PROJECT.C_URI = WORKITEM.FK_URI_PROJECT " +
+		              "INNER JOIN CF_WORKITEM CF1 ON CF1.FK_WORKITEM = WORKITEM.C_PK " +
+		              "WHERE TRUE AND WORKITEM.C_TYPE = 'testcase' AND CF1.C_NAME = '" + fieldName +
+		              "' AND CF1.C_STRING_VALUE='" + heading + "'";
+		    
+		    IPObjectList<IWorkItem> wiList = trackerService.getDataService().sqlSearch(wiQuery);
+		    int count = wiList.size();
+		    System.out.println("The WorkItem Count is" + count);
+		    for (IWorkItem wi : wiList) {
+		        System.out.println("WorkItem Id is " + wi.getId() + "\n");
+		    }
+		    displayCustomizedWarningMessage(wiList, workItem);
 		}
-
-		displayCustomizedWarningMessage(wiList,workItem);
 		
 	}
 	
@@ -215,26 +224,43 @@ public class LiveDocSaveHandler implements InvocationHandler {
 	public void displayCustomizedWarningMessage (List<IWorkItem> workItemList, IWorkItem workItem) {
 		
 		 
-		String warningMessage = "Deleting " + workItem.getType().getId() + " in the current document "
-				+ "is mapped to the following work item specification fields: ";
+		StringBuilder warningMessageBuilder = new StringBuilder();
+		String uriDetails = "";
 		 
-		for (IWorkItem wi : workItemList) {
-		   
-		        uniqueIds.add(wi.getId());    
-		}
+		// Check if the warning message is empty before constructing it
+		if (warningMessageBuilder.length() == 0 && uriDetails.isEmpty()) {
+		    // Construct the warning message
+		    warningMessageBuilder.append("Deleting ").append(workItem.getType().getId())
+		            .append(" in the current document is mapped to the following work item specification fields: ");
 		 
-		// Append the unique work item IDs to the warning message
-		if (!uniqueIds.isEmpty()) {
-		    for (String id : uniqueIds) {
-		    	warningMessage +=  id + ",";
+		    Set<String> uniqueIds = new HashSet<>(); // Use a Set to store unique IDs
+		 
+		    for (IWorkItem wi : workItemList) {
+		        uniqueIds.add(wi.getId().toString()); // Assuming wi.getId() retrieves the correct ID value
 		    }
-		    // Remove the trailing comma and space if there are elements appended
-		    warningMessage = warningMessage.substring(0, warningMessage.length() - 2);
+		 
+		    // Construct the warning message with unique work item IDs
+		    if (!uniqueIds.isEmpty()) {
+		        StringBuilder idList = new StringBuilder();
+		        for (String id : uniqueIds) {
+		            idList.append(id).append(", ");
+		        }
+		        // Remove the trailing comma and space if there are elements appended
+		        if (idList.length() > 0) {
+		            idList.setLength(idList.length() - 2);
+		        }
+		        warningMessageBuilder.append(idList);
+		    }
+		 
+		    // Construct the URI details
+		    uriDetails = "Please visit the following URI for more details: "
+		            + "http://denbg0415vm.izd01.in/polarion/#/project/PistonAssembly/wiki/testing_Specification_Report_Page?documentId=" + workItem.getModule().getId() + "&headingId=" + workItem.getId();
 		}
 		 
-		if (!warningMessage.equals("Deleting " + workItem.getType().getId() + " in the current document is mapped to the "
-				+ "following work item specification fields:")) {
-		    throw new UserFriendlyRuntimeException(warningMessage);
+		// Check if the warning message is not empty to throw the exception with the message
+		if (warningMessageBuilder.length() > 0) {
+		    warningMessageBuilder.append("\n").append(uriDetails);
+		    throw new UserFriendlyRuntimeException(warningMessageBuilder.toString());
 		}
 	}
 	
