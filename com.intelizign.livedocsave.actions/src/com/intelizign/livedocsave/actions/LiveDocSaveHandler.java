@@ -234,7 +234,6 @@ public class LiveDocSaveHandler implements InvocationHandler {
 		 
 		if (!warningMessage.equals("Deleting " + workItem.getType().getId() + " in the current document is mapped to the "
 				+ "following work item specification fields:")) {
-			
 		    throw new UserFriendlyRuntimeException(warningMessage);
 		}
 	}
