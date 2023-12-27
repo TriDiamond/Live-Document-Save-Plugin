@@ -8,7 +8,9 @@ import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.script.Bindings;
@@ -27,6 +29,7 @@ import com.polarion.core.util.exceptions.UserFriendlyRuntimeException;
 import com.polarion.core.util.logging.Logger;
 import com.polarion.platform.core.PlatformContext;
 import com.polarion.platform.persistence.IDataService;
+import com.polarion.platform.persistence.model.IPObject;
 import com.polarion.platform.persistence.model.IPObjectList;
 import com.polarion.platform.persistence.spi.EnumOption;
 import com.polarion.subterra.base.location.ILocation;
@@ -37,6 +40,7 @@ public class LiveDocSaveHandler implements InvocationHandler {
 	private IDataService ds;
 	private ArrayList<Thread> currentActiveThreads = new ArrayList<Thread>();
 	private List<IWorkItem> workItemList = new ArrayList <IWorkItem> ();
+	private Set<String> uniqueIds = new HashSet<>();
 	private ITrackerService trackerService = PlatformContext.getPlatform().lookupService(ITrackerService.class);
 	private static final String javascriptSuffix = ".js";
 	private String preSave = "pre-save";
@@ -172,49 +176,75 @@ public class LiveDocSaveHandler implements InvocationHandler {
 		System.out.println("WorkItem Id is" + workItem.getId() + 
 				"WorkItem Title is" + workItem.getTitle() + "\n");	
 		
-		getCustomFieldValue(workItem);
+		getSpecificationFieldTestCaseWi(workItem);
 	}
 	
 	/*
 	 * Check CustomField Specification value in all workItem
 	 */
-	public void getCustomFieldValue(IWorkItem workItem) {
-		ITrackerProject trackerPro = trackerService.getTrackerProject(workItem.getProjectId());
-		String documentWorkItem = "project.id:" + workItem.getProjectId() + "AND type:testcase";
-		IPObjectList<IWorkItem> wiList = trackerPro.queryWorkItems(documentWorkItem, "id");
-		List<IWorkItem> workItemList = gatherWorkItemObject(wiList, workItem);
+	public void getSpecificationFieldTestCaseWi(IWorkItem workItem) {
 		
-		for (IWorkItem wi : wiList) {
-			
-			EnumOption customEnum = (EnumOption) wi.getValue("specification");
-			IWorkItem workItemObject = trackerPro.getWorkItem(customEnum.getId());
-			if (workItem.getId().equals(workItemObject.getId())) {
-				String warningMessage = "Deleting" +" "+ workItem.getType().getId() +" "+ "In Current Document is mapped "
-						+ "to Following workItem Specification Field" + " "+wi.getId();
-				throw new UserFriendlyRuntimeException(warningMessage);
-			}
-
+		
+		String heading = workItem.getId().toString();     // Get Deleted Heading
+		String module = workItem.getModule().getId();     // Get Deleted header Module Id
+		
+		System.out.println("The heading and Module Name is" + heading + module);
+		String wiQuery = "";
+		if(module.equalsIgnoreCase("Specification_LOV")) { // If Document is Specification_LOV Below Query Going to Be Executed
+			wiQuery = "select WORKITEM.C_URI from WORKITEM inner join PROJECT on PROJECT.C_URI = WORKITEM.FK_URI_PROJECT  inner join CF_WORKITEM CF1 on CF1.FK_WORKITEM = WORKITEM.C_PK where true and WORKITEM.C_TYPE = 'testcase' AND CF1.C_NAME = 'specification' AND CF1.C_STRING_VALUE='"+ heading+"'";
+		}else if(module.equalsIgnoreCase("Generic_Test_Name")) {
+			wiQuery = "select WORKITEM.C_URI from WORKITEM inner join PROJECT on PROJECT.C_URI = WORKITEM.FK_URI_PROJECT  inner join CF_WORKITEM CF1 on CF1.FK_WORKITEM = WORKITEM.C_PK where true and WORKITEM.C_TYPE = 'testcase' AND CF1.C_NAME = 'genericTestName' AND CF1.C_STRING_VALUE='"+ heading+"'";
+		}else {
+			log.info("Module Not Exist");
 		}
-	}
-	/*
-	 * Collect the  test case workItemObject  -- if the Specification Field has 
-	 * the deletion of a work item value in the current document.
-	 */
-	public List<IWorkItem> gatherWorkItemObject(IPObjectList<IWorkItem> wiList, IWorkItem workItem) {
 		
+		IPObjectList<IWorkItem> wiList =trackerService.getDataService().sqlSearch(wiQuery);
+		int count = wiList.size();
+		System.out.println("The WorkItem Count is" + count);
 		for(IWorkItem wi : wiList) {
-			if(wi.getId().equalsIgnoreCase(workItem.getId())){
-               workItemList.add(wi);
-			}
+			System.out.println("WorkItem Id is" + wi.getId() +"\n");
 		}
-		return workItemList;
+
+		displayCustomizedWarningMessage(wiList,workItem);
+		
 	}
 	
+	/*
+	 * Display Customized Warning Message to the User
+	 */
+	public void displayCustomizedWarningMessage (List<IWorkItem> workItemList, IWorkItem workItem) {
+		
+		 
+		String warningMessage = "Deleting " + workItem.getType().getId() + " in the current document "
+				+ "is mapped to the following work item specification fields: ";
+		 
+		for (IWorkItem wi : workItemList) {
+		   
+		        uniqueIds.add(wi.getId());    
+		}
+		 
+		// Append the unique work item IDs to the warning message
+		if (!uniqueIds.isEmpty()) {
+		    for (String id : uniqueIds) {
+		    	warningMessage +=  id + ",";
+		    }
+		    // Remove the trailing comma and space if there are elements appended
+		    warningMessage = warningMessage.substring(0, warningMessage.length() - 2);
+		}
+		 
+		if (!warningMessage.equals("Deleting " + workItem.getType().getId() + " in the current document is mapped to the "
+				+ "following work item specification fields:")) {
+			
+		    throw new UserFriendlyRuntimeException(warningMessage);
+		}
+	}
+	
+
 
 	// This Method read the custom script and occurred error its warning to the user
 	private Object saveModule(IModule module) throws Throwable {
 		try {
-			System.out.println("Module Id is" + module.getId());
+			//System.out.println("Module Id is" + module.getId());
 			List<String> scriptPathsList = collectScriptFileName(module);
 			log.info("SaveHandler instance " + hashCode() + " is called from thread with id "
 					+ Thread.currentThread().hashCode() + " for Module with id " + module.getId());

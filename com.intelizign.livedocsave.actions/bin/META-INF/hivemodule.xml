@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module id="com.intelizign.livedocsave.actions" version="1.0.0">
+	<service-point id="DataServiceInterceptorFactory"
+		interface="org.apache.hivemind.ServiceInterceptorFactory"
+		visibility="private">
+		<invoke-factory>
+			<construct
+				class="com.intelizign.livedocsave.actions.DataServiceInterceptorFactory">
+			</construct>
+		</invoke-factory>
+	</service-point>
+
+	<service-point id="moduleFactoryInterceptorFactory"
+		visibility="private"
+		interface="org.apache.hivemind.ServiceInterceptorFactory">
+		<invoke-factory>
+			<construct
+				class="com.intelizign.livedocsave.actions.ModuleFactoryInterceptorFactory">
+				<service>com.polarion.platform.persistence.dataservice.dataService
+				</service>
+			</construct>
+		</invoke-factory>
+	</service-point>
+
+	<implementation
+		service-id="com.polarion.platform.persistence.dataservice.dataService">
+		<interceptor service-id="DataServiceInterceptorFactory" />
+	</implementation>
+
+
+	<implementation
+		service-id="com.polarion.platform.alm.tracker.moduleFactory">
+		<interceptor service-id="moduleFactoryInterceptorFactory" />
+	</implementation>
+
+
+	<!-- Intercepting for WorkItem Factory -->
+
+	<service-point id="workItemFactoryInterceptorFactory"
+		visibility="private"
+		interface="org.apache.hivemind.ServiceInterceptorFactory">
+		<invoke-factory>
+			<construct
+				class="com.intelizign.livedocsave.actions.WorkItemFactoryInterceptorFactory">
+				<service>com.polarion.platform.persistence.dataservice.dataService
+				</service>
+			</construct>
+		</invoke-factory>
+	</service-point>
+
+	<implementation
+		service-id="com.polarion.platform.alm.tracker.workitemFactory">
+		<interceptor
+			service-id="workItemFactoryInterceptorFactory" />
+	</implementation>
+
+</module>
