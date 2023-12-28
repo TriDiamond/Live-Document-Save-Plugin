@@ -20,29 +20,21 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import com.polarion.alm.projects.model.IProject;
-import com.polarion.alm.tracker.IModuleManager;
+
 import com.polarion.alm.tracker.ITrackerService;
 import com.polarion.alm.tracker.model.IModule;
-import com.polarion.alm.tracker.model.ITrackerProject;
 import com.polarion.alm.tracker.model.IWorkItem;
 import com.polarion.core.util.exceptions.UserFriendlyRuntimeException;
 import com.polarion.core.util.logging.Logger;
 import com.polarion.platform.core.PlatformContext;
 import com.polarion.platform.persistence.IDataService;
-import com.polarion.platform.persistence.model.IPObject;
 import com.polarion.platform.persistence.model.IPObjectList;
-import com.polarion.platform.persistence.spi.EnumOption;
-import com.polarion.subterra.base.data.identification.IContextId;
-import com.polarion.subterra.base.location.ILocation;
-import com.polarion.subterra.base.location.Location;
+
 
 public class LiveDocSaveHandler implements InvocationHandler {
 	private static final Logger log = Logger.getLogger(LiveDocSaveHandler.class);
 	private IDataService ds;
 	private ArrayList<Thread> currentActiveThreads = new ArrayList<Thread>();
-	private List<IWorkItem> workItemList = new ArrayList <IWorkItem> ();
-	private Set<String> uniqueIds = new HashSet<>();
 	private ITrackerService trackerService = PlatformContext.getPlatform().lookupService(ITrackerService.class);
 	private static final String javascriptSuffix = ".js";
 	private String preSave = "pre-save";
