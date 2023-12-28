@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -32,6 +33,7 @@ import com.polarion.platform.persistence.IDataService;
 import com.polarion.platform.persistence.model.IPObject;
 import com.polarion.platform.persistence.model.IPObjectList;
 import com.polarion.platform.persistence.spi.EnumOption;
+import com.polarion.subterra.base.data.identification.IContextId;
 import com.polarion.subterra.base.location.ILocation;
 import com.polarion.subterra.base.location.Location;
 
@@ -187,6 +189,7 @@ public class LiveDocSaveHandler implements InvocationHandler {
 		
 		String heading = workItem.getId().toString(); // Get Deleted Heading
 		String module = workItem.getModule().getId(); // Get Deleted header Module Id
+	
 		 
 		System.out.println("The heading and Module Name is" + heading + module);
 		String wiQuery = "";
@@ -210,10 +213,12 @@ public class LiveDocSaveHandler implements InvocationHandler {
 		    IPObjectList<IWorkItem> wiList = trackerService.getDataService().sqlSearch(wiQuery);
 		    int count = wiList.size();
 		    System.out.println("The WorkItem Count is" + count);
+		    if(count > 0) {
 		    for (IWorkItem wi : wiList) {
 		        System.out.println("WorkItem Id is " + wi.getId() + "\n");
 		    }
 		    displayCustomizedWarningMessage(wiList, workItem);
+		    }
 		}
 		
 	}
@@ -221,49 +226,40 @@ public class LiveDocSaveHandler implements InvocationHandler {
 	/*
 	 * Display Customized Warning Message to the User
 	 */
-	public void displayCustomizedWarningMessage (List<IWorkItem> workItemList, IWorkItem workItem) {
-		
-		 
+	public void displayCustomizedWarningMessage(List<IWorkItem> workItemList, IWorkItem workItem) {
+
 		StringBuilder warningMessageBuilder = new StringBuilder();
 		String uriDetails = "";
-		 
-		// Check if the warning message is empty before constructing it
-		if (warningMessageBuilder.length() == 0 && uriDetails.isEmpty()) {
-		    // Construct the warning message
-		    warningMessageBuilder.append("Deleting ").append(workItem.getType().getId())
-		            .append(" in the current document is mapped to the following work item specification fields: ");
-		 
-		    Set<String> uniqueIds = new HashSet<>(); // Use a Set to store unique IDs
-		 
-		    for (IWorkItem wi : workItemList) {
-		        uniqueIds.add(wi.getId().toString()); // Assuming wi.getId() retrieves the correct ID value
-		    }
-		 
-		    // Construct the warning message with unique work item IDs
-		    if (!uniqueIds.isEmpty()) {
-		        StringBuilder idList = new StringBuilder();
-		        for (String id : uniqueIds) {
-		            idList.append(id).append(", ");
-		        }
-		        // Remove the trailing comma and space if there are elements appended
-		        if (idList.length() > 0) {
-		            idList.setLength(idList.length() - 2);
-		        }
-		        warningMessageBuilder.append(idList);
-		    }
-		 
-		    // Construct the URI details
-		    uriDetails = "Please visit the following URI for more details: "
-		            + "http://denbg0415vm.izd01.in/polarion/#/project/PistonAssembly/wiki/testing_Specification_Report_Page?documentId=" + workItem.getModule().getId() + "&headingId=" + workItem.getId();
+
+		//Get Current Base URL
+		Properties properties = System.getProperties();
+		String baseUrl = properties.getProperty("base.url");
+		System.out.println("The Base Url is" + baseUrl + '\n');
+
+		warningMessageBuilder.append("Deleting ").append(workItem.getType().getId())
+				.append(" in the current document is mapped to the following work item specification fields: ");
+
+		//Include WorkItemId in Warning Message
+		StringBuilder idList = new StringBuilder();
+		for (IWorkItem wi : workItemList) {
+			idList.append(wi.getId()).append(", ");
 		}
-		 
-		// Check if the warning message is not empty to throw the exception with the message
-		if (warningMessageBuilder.length() > 0) {
-		    warningMessageBuilder.append("\n").append(uriDetails);
-		    throw new UserFriendlyRuntimeException(warningMessageBuilder.toString());
+		// Remove the trailing comma and space if there are elements appended
+		if (idList.length() > 0) {
+			idList.setLength(idList.length() - 2);
 		}
+		warningMessageBuilder.append(idList);
+
+		// Construct the URI details
+		uriDetails = "Please visit the following URI for more details: " + baseUrl + "/polarion/#/project/"
+				+ workItem.getProjectId() + "/wiki/testing_Specification_Report_Page?documentId="
+				+ workItem.getModule().getId() + "&headingId=" + workItem.getId();
+		System.out.println("The Uri Details" + uriDetails + "\n");
+
+		warningMessageBuilder.append("\n").append(uriDetails);
+		throw new UserFriendlyRuntimeException(warningMessageBuilder.toString());
+
 	}
-	
 
 
 	// This Method read the custom script and occurred error its warning to the user
