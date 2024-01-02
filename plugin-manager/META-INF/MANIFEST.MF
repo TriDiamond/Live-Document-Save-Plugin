@@ -1,0 +1,29 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Intelizign
+Bundle-SymbolicName: plugin-manager;singleton:=true
+Bundle-Version: 1.0.0
+Bundle-ClassPath: .,
+ webapp/plugin-manager/WEB-INF/lib/oshi-core-6.4.7.jar,
+ webapp/plugin-manager/WEB-INF/lib/jna-5.13.0.jar,
+ webapp/plugin-manager/WEB-INF/lib/jna-platform-5.13.0.jar,
+ webapp/plugin-manager/WEB-INF/lib/slf4j-api-2.0.9.jar
+Bundle-Activator: com.intechcore.polarion.extensions.marketplace.plugin_manager.ManagerPlugin
+Export-Package: com.intechcore.polarion.extensions.marketplace.plugin_manager
+Require-Bundle: com.polarion.portal.tomcat,
+ com.polarion.alm.ui,
+ com.polarion.alm.tracker,
+ org.apache.commons.io,
+ org.glassfish.jersey,
+ com.fasterxml.jackson,
+ io.swagger,
+ org.springframework.spring-core,
+ org.springframework.spring-web,
+ org.eclipse.core.runtime
+Build-Jdk-Spec: 17
+Bundle-RequiredExecutionEnvironment: JavaSE-17
+Created-By: Maven JAR Plugin 3.3.0
+Extension-Context: plugin-manager
+Eclipse-AutoStart: true
+Automatic-Module-Name: plugin.manager.singleton.true
+Bundle-Build-Timestamp: 2023-12-02 11:27

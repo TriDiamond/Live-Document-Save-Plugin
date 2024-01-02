@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module id="com.intechcore.polarion.extensions.marketplace.plugin_manager" version="1.0.0">
+
+	<contribution configuration-id="com.polarion.xray.webui.administrationPageExtenders">
+		<extender name="About"
+				  parentNodeName="Plugin Manager"
+				  parentNodeIconUrl="/polarion/plugin-manager-admin/ui/assets/extensions.svg"
+				  iconUrl="/polarion/plugin-manager-admin/ui/assets/info.svg"
+				  pageUrl="/polarion/plugin-manager-admin/static/index.html#about"
+				  projectScope="true"
+				  projectGroupScope="true"
+				  repositoryScope="true"/>
+		<extender name="System Info"
+				  parentNodeName="Plugin Manager"
+				  parentNodeIconUrl="/polarion/plugin-manager-admin/ui/assets/extensions.svg"
+				  iconUrl="/polarion/plugin-manager-admin/ui/assets/cpu.svg"
+				  pageUrl="/polarion/plugin-manager-admin/static/index.html#sysinfo"
+				  projectScope="true"
+				  projectGroupScope="true"
+				  repositoryScope="true"/>
+<!--		<extender name="Swagger UI"-->
+<!--				  parentNodeName="Plugin Manager"-->
+<!--				  parentNodeIconUrl="/polarion/plugin-manager-admin/ui/assets/extensions.svg"-->
+<!--				  iconUrl="/polarion/plugin-manager-admin/ui/assets/connector.svg"-->
+<!--				  pageUrl="/polarion/plugin-manager/rest/swagger"-->
+<!--				  projectScope="true"-->
+<!--				  projectGroupScope="true"-->
+<!--				  repositoryScope="true"/>-->
+		<extender name="Extensions"
+				  parentNodeName="Plugin Manager"
+				  parentNodeIconUrl="/polarion/plugin-manager-admin/ui/assets/extensions.svg"
+				  iconUrl="/polarion/plugin-manager-admin/ui/assets/list.svg"
+				  pageUrl="/polarion/plugin-manager-admin/static/index.html#extensions"
+				  projectScope="true"
+				  projectGroupScope="true"
+				  repositoryScope="true"/>
+<!--		<extender name="Marketplace"-->
+<!--				  parentNodeName="Plugin Manager"-->
+<!--				  parentNodeIconUrl="/polarion/plugin-manager-admin/ui/assets/extensions.svg"-->
+<!--				  iconUrl="/polarion/plugin-manager-admin/ui/assets/marketplace.svg"-->
+<!--				  pageUrl="/polarion/plugin-manager-admin/static/index.html#marketplace"-->
+<!--				  projectScope="true"-->
+<!--				  projectGroupScope="true"-->
+<!--				  repositoryScope="true"/>-->
+	</contribution>
+</module>
